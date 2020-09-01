@@ -20,8 +20,12 @@ class HashTable:
     Implement this.
     """
 
-    def __init__(self, capacity):
+    def __init__(self, capacity=MIN_CAPACITY):
         # Your code here
+        self.capacity = capacity if capacity >= MIN_CAPACITY else MIN_CAPACITY
+        self.table = [None] * (self.capacity)
+        self.count = 0
+        self.resizing = False
 
 
     def get_num_slots(self):
@@ -34,7 +38,8 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
+        return len(self.table)
 
 
     def get_load_factor(self):
@@ -43,7 +48,16 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
+        load_factor = self.count/self.capacity
+
+        if not self.resizing:
+            if load_factor > 0.7:
+                self.resize(int(self.capacity * 2))
+            elif load_factor < 0.2 and self.capacity != MIN_CAPACITY:
+                self.resize(int(self.capacity / 2))
+        
+        return load_factor
 
 
     def fnv1(self, key):
@@ -53,7 +67,7 @@ class HashTable:
         Implement this, and/or DJB2.
         """
 
-        # Your code here
+        pass
 
 
     def djb2(self, key):
@@ -62,7 +76,11 @@ class HashTable:
 
         Implement this, and/or FNV-1.
         """
-        # Your code here
+
+        h = 5381
+        for x in key:
+            h = (h * 33) + ord(x)
+        return h
 
 
     def hash_index(self, key):
@@ -81,8 +99,26 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
 
+        i = self.hash_index(key)
+
+        if self.table[i] == None:
+            self.table[i] == HashTableEntry(key, value)
+        else: 
+            current_node = self.table[i]
+
+            if current_node.key == key:
+                current_node.value = value
+            else: 
+                while current_node.next != None:
+                    if current_node.next.key == key:
+                        current_node.next.value = value
+                        return
+                    current_node = current_node.next
+                current_node.next = HashTableEntry(key, value)
+
+        self.count += 1
+        self.get_load_factor()
 
     def delete(self, key):
         """
@@ -92,7 +128,25 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
+        i = self.hash_index(key)
+
+        if self.table[i] != None:
+            current_node = self.table[i]
+            if current_node.key == key:
+                self.table[i] = current_node.next
+                self.count -= 1
+                self.get_load_factor()
+                return
+            while current_node.next != None:
+                if current_node.next.key == key:
+                    current_node.next = current_node.next.next
+                    self.count -= 1
+                    self.get_load_factor()
+                    return
+            print('Error: Key not found')
+        else:
+            print('Error: Key not found')
 
 
     def get(self, key):
@@ -103,7 +157,22 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
+        i = self.hash_index(key)
+
+        if self.table[i] == None:
+            return self.table[i]
+
+        if self.table[i].key != key:
+            current_node = self.table[i]
+            while current_node != None:
+                if current_node.key == key:
+                    return current_node.value
+                else:
+                    current_node = current_node.next
+            return current_node
+        else:
+            return self.table[i].value
 
 
     def resize(self, new_capacity):
@@ -113,9 +182,23 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
 
+        new_table = HashTable(new_capacity)
 
+        new_table.resizing = True
+
+        for n in self.table:
+            if n != None and n.next == None:
+                new_table.put(n.key, n.value)
+            else:
+                current_node = n
+                while current_node != None:
+                    new_table.put(current_node.key, current_node.value)
+                    current_node = current_node.next
+
+        self.capacity = new_table.capacity
+        self.table = new_table.table
+        self.count = new_table.count
 
 if __name__ == "__main__":
     ht = HashTable(8)
